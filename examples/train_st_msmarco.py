@@ -13,19 +13,7 @@ from sentence_transformers.evaluation import TripletEvaluator
 from sentence_transformers.losses import CachedMultipleNegativesRankingLoss
 from sentence_transformers.training_args import BatchSamplers
 
-def main():
-    # parse the lr & model name
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--lr", type=float, default=8e-5)
-    parser.add_argument("--model_name", type=str, default="answerdotai/ModernBERT-base")
-    args = parser.parse_args()
-    lr = args.lr
-    model_name = args.model_name
-    model_shortname = model_name.split("/")[-1]
-
-    # 1. Load a model to finetune
-    model = SentenceTransformer(model_name, model_kwargs={"attn_implementation": "flash_attention_2"})
-
+def train_on_msmarco(model, lr, model_shortname):
     # 2. Load a dataset to finetune on
     dataset = load_dataset(
         "sentence-transformers/msmarco-co-condenser-margin-mse-sym-mnrl-mean-v1",
@@ -93,6 +81,22 @@ def main():
 
     # 8. Save the model
     model.save_pretrained(f"output/{model_shortname}/{run_name}/final")
+    return model
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--lr", type=float, default=8e-5)
+    parser.add_argument("--model_name", type=str, default="answerdotai/ModernBERT-base")
+    args = parser.parse_args()
+    
+    model = SentenceTransformer(args.model_name, model_kwargs={"attn_implementation": "flash_attention_2"})
+    
+    print("=== Training on MS MARCO ===")
+    model = train_on_msmarco(model, args.lr, args.model_name.split("/")[-1])
+    
+    # Save locally only
+    model_shortname = args.model_name.split("/")[-1]
+    model.save_pretrained(f"output/{model_shortname}/msmarco_trained")
 
 if __name__ == "__main__":
-    main()
+    main() 
