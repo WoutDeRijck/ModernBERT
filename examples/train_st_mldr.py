@@ -15,8 +15,8 @@ from sentence_transformers.training_args import BatchSamplers
 
 def train_on_mldr(model, lr, model_shortname, language='en'):
     # Load MLDR dataset for specific language
-    train_dataset = load_dataset('Shitao/MLDR', language, split='train')
-    eval_dataset = load_dataset('Shitao/MLDR', language, split='dev')
+    train_dataset = load_dataset('Shitao/MLDR', language, split='train', trust_remote_code=True)
+    eval_dataset = load_dataset('Shitao/MLDR', language, split='dev', trust_remote_code=True)
     
     # Convert dataset to the format needed for training
     def format_for_training(dataset):
@@ -53,14 +53,14 @@ def train_on_mldr(model, lr, model_shortname, language='en'):
     print(f"Base Model Score: {base_score}\n")
 
     # Define loss function for MLDR
-    loss = CachedMultipleNegativesRankingLoss(model, mini_batch_size=8)
+    loss = CachedMultipleNegativesRankingLoss(model, mini_batch_size=4)
 
     run_name = f"{model_shortname}-MLDR-{language}-{lr}"
     args = SentenceTransformerTrainingArguments(
         output_dir=f"output/{model_shortname}/{run_name}",
         num_train_epochs=1,
-        per_device_train_batch_size=128,
-        per_device_eval_batch_size=128,
+        per_device_train_batch_size=16,
+        per_device_eval_batch_size=16,
         warmup_ratio=0.05,
         fp16=False,
         bf16=True,
